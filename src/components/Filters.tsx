@@ -8,6 +8,7 @@ export type FilterState = {
   category: string;
   stage: string;
   region: string;
+  sort: string;
 };
 
 export function Filters({
@@ -54,6 +55,11 @@ export function Filters({
             {REGION_LABELS[r][lang]}
           </option>
         ))}
+      </select>
+      <select className={selectCls} value={value.sort} onChange={(e) => set({ sort: e.target.value })}>
+        <option value="featured">{t("sort_featured")}</option>
+        <option value="new">{t("sort_new")}</option>
+        <option value="top">{t("sort_top")}</option>
       </select>
     </div>
   );

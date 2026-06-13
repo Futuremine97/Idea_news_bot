@@ -35,6 +35,26 @@ export default function RegisterPage() {
 
   const set = (patch: Partial<Form>) => setForm((f) => ({ ...f, ...patch }));
 
+  const [geoStatus, setGeoStatus] = useState<"idle" | "searching" | "fail" | "disabled">("idle");
+  const geocode = async () => {
+    if (!form.address.trim()) return;
+    setGeoStatus("searching");
+    try {
+      const r = await fetch(`/api/geocode?query=${encodeURIComponent(form.address)}`);
+      if (r.status === 501) return setGeoStatus("disabled");
+      const d = await r.json();
+      const hit = d?.results?.[0];
+      if (hit) {
+        set({ lat: String(hit.lat), lng: String(hit.lng) });
+        setGeoStatus("idle");
+      } else {
+        setGeoStatus("fail");
+      }
+    } catch {
+      setGeoStatus("fail");
+    }
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("submitting");
@@ -141,8 +161,20 @@ export default function RegisterPage() {
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="sm:col-span-3">
                 <Field label={t("field_address")}>
-                  <input className={inputCls} value={form.address} onChange={(e) => set({ address: e.target.value })} />
+                  <div className="flex gap-2">
+                    <input className={inputCls} value={form.address} onChange={(e) => set({ address: e.target.value })} />
+                    <button
+                      type="button"
+                      onClick={geocode}
+                      disabled={geoStatus === "searching" || !form.address.trim()}
+                      className="shrink-0 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100 disabled:opacity-50"
+                    >
+                      {geoStatus === "searching" ? t("geocode_searching") : t("geocode_btn")}
+                    </button>
+                  </div>
                 </Field>
+                {geoStatus === "fail" && <p className="mt-1 text-xs text-red-600">{t("geocode_fail")}</p>}
+                {geoStatus === "disabled" && <p className="mt-1 text-xs text-amber-600">{t("geocode_disabled")}</p>}
               </div>
               <Field label="위도 (lat)">
                 <input className={inputCls} inputMode="decimal" placeholder="37.5665" value={form.lat} onChange={(e) => set({ lat: e.target.value })} />

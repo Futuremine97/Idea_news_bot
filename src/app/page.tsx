@@ -10,7 +10,7 @@ export default function HomePage() {
   const { t } = useLang();
   const [services, setServices] = useState<ServiceLite[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<FilterState>({ q: "", category: "all", stage: "all", region: "all" });
+  const [filters, setFilters] = useState<FilterState>({ q: "", category: "all", stage: "all", region: "all", sort: "featured" });
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -18,6 +18,7 @@ export default function HomePage() {
     if (filters.category !== "all") params.set("category", filters.category);
     if (filters.stage !== "all") params.set("stage", filters.stage);
     if (filters.region !== "all") params.set("region", filters.region);
+    if (filters.sort) params.set("sort", filters.sort);
 
     setLoading(true);
     const ctrl = new AbortController();
