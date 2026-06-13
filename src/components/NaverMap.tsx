@@ -20,7 +20,8 @@ function loadNaverScript(clientId: string): Promise<void> {
     }
     const s = document.createElement("script");
     s.id = "naver-map-sdk";
-    s.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${clientId}`;
+    // 2025년부터 네이버 신규 키는 ncpKeyId 파라미터 사용 (구 ncpClientId 대체)
+    s.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${clientId}`;
     s.async = true;
     s.onload = () => resolve();
     s.onerror = () => reject(new Error("Failed to load Naver Maps SDK"));
