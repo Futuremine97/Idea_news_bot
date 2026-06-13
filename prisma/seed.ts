@@ -1,0 +1,189 @@
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+/**
+ * 샘플 시드 데이터.
+ * 아래 항목은 사이트가 비어 보이지 않도록 넣은 "예시" 데이터입니다.
+ * 실제 서비스 정보/지표가 아니며, 운영 전 실제 등록 데이터로 교체하세요.
+ */
+const services = [
+  // ── 한국 ──────────────────────────────────────────────
+  {
+    nameKo: "마이팩토리 AI",
+    nameEn: "MyFactory AI",
+    taglineKo: "소상공인용 자동 마케팅 카피 생성 에이전트",
+    taglineEn: "Auto marketing-copy agent for small businesses",
+    descKo: "네이버 스마트스토어/인스타그램 상품 정보를 입력하면 광고 문구와 해시태그를 자동 생성하는 MVP 단계 서비스입니다.",
+    descEn: "An MVP that generates ad copy and hashtags from your store/Instagram product info.",
+    category: "marketing",
+    stage: "mvp",
+    region: "kr",
+    websiteUrl: "https://example.com/myfactory",
+    instagramUrl: "https://instagram.com/myfactory.ai",
+    pricing: "freemium",
+    tags: "마케팅,카피라이팅,소상공인,인스타그램",
+    featured: true,
+  },
+  {
+    nameKo: "헬로카운터",
+    nameEn: "HelloCounter",
+    taglineKo: "동네 카페 예약·웨이팅 관리 AI 챗봇",
+    taglineEn: "AI chatbot for cafe reservations & waitlists",
+    descKo: "카카오톡 채널과 연동되어 예약, 웨이팅, 단골 관리를 자동화하는 pre-MVP 단계 서비스입니다. 오프라인 매장 위치 등록 가능.",
+    descEn: "Pre-MVP chatbot connected to KakaoTalk for reservations, waitlists, and loyalty.",
+    category: "chatbot",
+    stage: "pre-mvp",
+    region: "kr",
+    websiteUrl: "https://example.com/hellocounter",
+    pricing: "free",
+    isLocalBiz: true,
+    address: "서울특별시 강남구 테헤란로 152",
+    lat: 37.5006,
+    lng: 127.0366,
+    mapProvider: "naver",
+    tags: "챗봇,예약,카페,자영업",
+    featured: true,
+  },
+  {
+    nameKo: "리뷰지니",
+    nameEn: "ReviewGenie",
+    taglineKo: "배달앱 리뷰 자동 응대 에이전트",
+    taglineEn: "Auto-reply agent for delivery-app reviews",
+    descKo: "배달의민족/쿠팡이츠 리뷰에 사장님 말투로 자동 답글을 다는 MVP 서비스입니다.",
+    descEn: "MVP that auto-replies to delivery reviews in the owner's tone.",
+    category: "marketing",
+    stage: "mvp",
+    region: "kr",
+    websiteUrl: "https://example.com/reviewgenie",
+    pricing: "paid",
+    tags: "리뷰,자영업,배달,자동응대",
+  },
+  {
+    nameKo: "코드네비",
+    nameEn: "CodeNavi",
+    taglineKo: "한국어 코드 리뷰 AI 에이전트",
+    taglineEn: "Korean-language code review AI agent",
+    descKo: "PR을 분석해 한국어로 리뷰 코멘트를 남기는 개발자용 pre-MVP 도구입니다.",
+    descEn: "Pre-MVP dev tool that reviews PRs and comments in Korean.",
+    category: "dev-tool",
+    stage: "pre-mvp",
+    region: "kr",
+    websiteUrl: "https://example.com/codenavi",
+    pricing: "freemium",
+    tags: "개발도구,코드리뷰,깃허브",
+  },
+
+  // ── 미국 ──────────────────────────────────────────────
+  {
+    nameKo: "인박스파일럿",
+    nameEn: "InboxPilot",
+    taglineKo: "받은편지함을 정리하는 이메일 에이전트",
+    taglineEn: "Email agent that triages your inbox",
+    descKo: "이메일을 자동 분류하고 초안을 작성하는 미국 초기 단계 에이전트입니다.",
+    descEn: "Early-stage US agent that triages email and drafts replies for you.",
+    category: "productivity",
+    stage: "mvp",
+    region: "us",
+    websiteUrl: "https://example.com/inboxpilot",
+    pricing: "freemium",
+    tags: "productivity,email,agent",
+    featured: true,
+  },
+  {
+    nameKo: "사이트스미스",
+    nameEn: "SiteSmith",
+    taglineKo: "한 문장으로 랜딩페이지를 만드는 에이전트",
+    taglineEn: "Build a landing page from one sentence",
+    descKo: "프롬프트만으로 랜딩페이지를 생성/배포하는 pre-MVP 서비스입니다.",
+    descEn: "Pre-MVP that generates and deploys landing pages from a prompt.",
+    category: "no-code",
+    stage: "pre-mvp",
+    region: "us",
+    websiteUrl: "https://example.com/sitesmith",
+    pricing: "freemium",
+    tags: "no-code,website,builder",
+  },
+  {
+    nameKo: "데이터듀오",
+    nameEn: "DataDuo",
+    taglineKo: "자연어로 데이터를 분석하는 분석 에이전트",
+    taglineEn: "Analytics agent you talk to in plain English",
+    descKo: "CSV/DB에 자연어로 질문하면 차트와 인사이트를 주는 MVP 분석 도구입니다.",
+    descEn: "MVP analytics tool: ask your data in plain English, get charts.",
+    category: "analytics",
+    stage: "mvp",
+    region: "us",
+    websiteUrl: "https://example.com/dataduo",
+    pricing: "paid",
+    tags: "analytics,data,agent",
+  },
+
+  // ── 글로벌 ────────────────────────────────────────────
+  {
+    nameKo: "보이스플로우 AI",
+    nameEn: "VoiceFlow AI",
+    taglineKo: "다국어 고객지원 보이스봇",
+    taglineEn: "Multilingual customer-support voicebot",
+    descKo: "전화 상담을 자동 응대하는 글로벌 초기 단계 보이스 에이전트입니다.",
+    descEn: "Early-stage global voice agent that handles inbound support calls.",
+    category: "chatbot",
+    stage: "mvp",
+    region: "global",
+    websiteUrl: "https://example.com/voiceflow",
+    pricing: "contact",
+    tags: "voice,support,multilingual",
+    featured: true,
+  },
+  {
+    nameKo: "리서치메이트",
+    nameEn: "ResearchMate",
+    taglineKo: "논문을 요약·비교하는 리서치 에이전트",
+    taglineEn: "Research agent that summarizes & compares papers",
+    descKo: "여러 논문을 한 번에 요약·비교하는 글로벌 pre-MVP 도구입니다.",
+    descEn: "Global pre-MVP that summarizes and compares multiple papers at once.",
+    category: "research",
+    stage: "pre-mvp",
+    region: "global",
+    websiteUrl: "https://example.com/researchmate",
+    pricing: "freemium",
+    tags: "research,papers,summary",
+  },
+  {
+    nameKo: "샵메이트",
+    nameEn: "ShopMate",
+    taglineKo: "소규모 매장용 AI 매대 추천 + 위치 안내",
+    taglineEn: "AI merchandising + location guide for small shops",
+    descKo: "매장 위치를 지도에 등록하고 방문객에게 상품을 추천하는 글로벌 MVP입니다.",
+    descEn: "Global MVP: pin your shop on the map and recommend products to visitors.",
+    category: "vertical-agent",
+    stage: "mvp",
+    region: "global",
+    websiteUrl: "https://example.com/shopmate",
+    pricing: "freemium",
+    isLocalBiz: true,
+    address: "서울특별시 마포구 양화로 45",
+    lat: 37.5563,
+    lng: 126.9236,
+    mapProvider: "naver",
+    tags: "retail,merchandising,local",
+  },
+];
+
+async function main() {
+  console.log("🌱 Seeding...");
+  await prisma.service.deleteMany();
+  for (const s of services) {
+    await prisma.service.create({ data: { ...s, source: "manual", status: "approved" } });
+  }
+  console.log(`✅ Seeded ${services.length} services.`);
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

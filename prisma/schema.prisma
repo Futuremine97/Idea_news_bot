@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // 로컬: SQLite. 운영 전환 시 provider = "postgresql" 로 변경.
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 등록된 AI 서비스 / 에이전트 / 봇
+model Service {
+  id          String   @id @default(cuid())
+  // 이름 (한/영)
+  nameKo      String
+  nameEn      String
+  // 한 줄 소개 (한/영)
+  taglineKo   String
+  taglineEn   String
+  // 상세 설명 (한/영)
+  descKo      String
+  descEn      String
+
+  category    String   // 카테고리 (예: chatbot, marketing, dev-tool, vertical-agent ...)
+  stage       String   @default("mvp")   // idea | pre-mvp | mvp | growth
+  region      String   @default("global") // kr | us | global
+  websiteUrl  String?
+  instagramUrl String?
+  logoUrl     String?
+  pricing     String?  // free | freemium | paid | contact
+
+  // 자영업자/오프라인 업체용 위치 정보 (선택)
+  isLocalBiz  Boolean  @default(false)
+  address     String?
+  lat         Float?
+  lng         Float?
+  mapProvider String?  // naver | google
+
+  // 등록자 정보
+  submitterName  String?
+  submitterEmail String?
+
+  // 출처: manual(직접등록) | collected(자동수집)
+  source      String   @default("manual")
+  sourceUrl   String?
+
+  status      String   @default("approved") // pending | approved | rejected
+  featured    Boolean  @default(false)
+  views       Int      @default(0)
+  upvotes     Int      @default(0)
+
+  tags        String   @default("") // 쉼표 구분 태그
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([region])
+  @@index([stage])
+  @@index([status])
+}
