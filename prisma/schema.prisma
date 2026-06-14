@@ -24,6 +24,13 @@ model Service {
   category    String   // 카테고리 (예: chatbot, marketing, dev-tool, vertical-agent ...)
   stage       String   @default("mvp")   // idea | pre-mvp | mvp | growth
   region      String   @default("global") // kr | us | global
+
+  // 종류: service(일반 AI 서비스) | extension(플러그인/스킬/MCP 등)
+  kind        String   @default("service")
+  // extension 일 때 플랫폼: claude-plugin | claude-skill | chatgpt-gpt | chatgpt-skill | mcp | other
+  platform    String?
+  repoUrl     String?  // GitHub 등 소스/설치 저장소
+
   websiteUrl  String?
   instagramUrl String?
   logoUrl     String?
@@ -40,6 +47,9 @@ model Service {
   submitterName  String?
   submitterEmail String?
 
+  // 소유자 관리 토큰 (등록 시 발급, 비공개). 수정/삭제 시 검증용.
+  ownerToken     String?
+
   // 출처: manual(직접등록) | collected(자동수집)
   source      String   @default("manual")
   sourceUrl   String?
@@ -49,6 +59,12 @@ model Service {
   views       Int      @default(0)
   upvotes     Int      @default(0)
 
+  // 별점 집계 (평균 = ratingSum / ratingCount)
+  ratingSum   Int      @default(0)
+  ratingCount Int      @default(0)
+  reviews     Review[]
+  checkins    Checkin[]
+
   tags        String   @default("") // 쉼표 구분 태그
 
   createdAt   DateTime @default(now())
@@ -57,5 +73,38 @@ model Service {
   @@index([category])
   @@index([region])
   @@index([stage])
+  @@index([status])
+  @@index([kind])
+  @@index([platform])
+}
+
+// 사용자 리뷰 / 별점
+model Review {
+  id        String   @id @default(cuid())
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  author    String   @default("익명")
+  rating    Int      // 1~5
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([serviceId])
+}
+
+// 사용자 체크인: 가볼 곳(going) / 저장(saved) / 가봤음(went)
+// 로그인 없이 브라우저 visitorId 로 식별 (가벼운 신원). 사용자끼리 공개로 표시.
+model Checkin {
+  id        String   @id @default(cuid())
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  visitorId String   // 브라우저 localStorage UUID
+  nickname  String   @default("게스트")
+  status    String   // going | saved | went
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([serviceId, visitorId])
+  @@index([serviceId])
+  @@index([visitorId])
   @@index([status])
 }

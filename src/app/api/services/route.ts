@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { safeExternalUrl } from "@/lib/url";
-import { CATEGORIES, STAGES, REGIONS, PRICING } from "@/lib/types";
+import { parseServiceInput } from "@/lib/serviceInput";
 
 export const dynamic = "force-dynamic";
 
-const MAX = { short: 120, mid: 300, long: 4000, tags: 300 };
-
-function str(v: unknown, max: number): string {
-  if (typeof v !== "string") return "";
-  return v.trim().slice(0, max);
+// 공개 응답에서 비공개 필드(ownerToken) 제거
+function publicView<T extends { ownerToken?: string | null }>(s: T) {
+  const { ownerToken, ...rest } = s;
+  return rest;
 }
 
-// GET /api/services?q=&category=&stage=&region=&localOnly=&sort=
+// GET /api/services?q=&category=&stage=&region=&localOnly=&sort=&kind=&platform=
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const q = sp.get("q")?.trim();
@@ -21,11 +19,15 @@ export async function GET(req: NextRequest) {
   const region = sp.get("region") || undefined;
   const localOnly = sp.get("localOnly") === "1";
   const sort = sp.get("sort") || "featured";
+  const kind = sp.get("kind") || undefined;
+  const platform = sp.get("platform") || undefined;
 
   const where: any = { status: "approved" };
   if (category && category !== "all") where.category = category;
   if (stage && stage !== "all") where.stage = stage;
   if (region && region !== "all") where.region = region;
+  if (kind && kind !== "all") where.kind = kind;
+  if (platform && platform !== "all") where.platform = platform;
   if (localOnly) where.isLocalBiz = true;
   if (q) {
     where.OR = [
@@ -45,87 +47,37 @@ export async function GET(req: NextRequest) {
       : [{ featured: "desc" as const }, { upvotes: "desc" as const }, { createdAt: "desc" as const }];
 
   const services = await prisma.service.findMany({ where, orderBy });
-  return NextResponse.json({ services });
+  return NextResponse.json({ services: services.map(publicView) });
 }
 
-// POST /api/services — 누구나 등록 (입력 검증 + URL 살균)
+// POST /api/services — 누구나 등록
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => null);
-    if (!body || typeof body !== "object") {
-      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-    }
+    const parsed = parseServiceInput(body);
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
-    const data = {
-      nameKo: str(body.nameKo, MAX.short),
-      nameEn: str(body.nameEn, MAX.short),
-      taglineKo: str(body.taglineKo, MAX.mid),
-      taglineEn: str(body.taglineEn, MAX.mid),
-      descKo: str(body.descKo, MAX.long),
-      descEn: str(body.descEn, MAX.long),
-      category: str(body.category, 40),
-      stage: str(body.stage, 20),
-      region: str(body.region, 20),
-      pricing: str(body.pricing, 20),
-      tags: str(body.tags, MAX.tags),
-      address: str(body.address, MAX.mid),
-      submitterName: str(body.submitterName, MAX.short),
-      submitterEmail: str(body.submitterEmail, MAX.short),
-    };
-
-    // 필수 필드
-    for (const f of ["nameKo", "nameEn", "taglineKo", "taglineEn"] as const) {
-      if (!data[f]) return NextResponse.json({ error: `Missing field: ${f}` }, { status: 400 });
-    }
-    // enum 검증
-    if (!CATEGORIES.includes(data.category as any))
-      return NextResponse.json({ error: "Invalid category" }, { status: 400 });
-    if (!STAGES.includes(data.stage as any))
-      return NextResponse.json({ error: "Invalid stage" }, { status: 400 });
-    if (!REGIONS.includes(data.region as any))
-      return NextResponse.json({ error: "Invalid region" }, { status: 400 });
-    if (data.pricing && !PRICING.includes(data.pricing as any)) data.pricing = "";
-
-    // URL 살균 (http/https 만 허용 → javascript: 등 XSS 차단)
-    const websiteUrl = safeExternalUrl(body.websiteUrl);
-    const instagramUrl = safeExternalUrl(body.instagramUrl);
-    const logoUrl = safeExternalUrl(body.logoUrl);
-
-    // 좌표 검증
-    const isLocalBiz = !!body.isLocalBiz;
-    let lat: number | null = null;
-    let lng: number | null = null;
-    if (body.lat != null && body.lat !== "") {
-      const n = Number(body.lat);
-      if (Number.isFinite(n) && n >= -90 && n <= 90) lat = n;
-    }
-    if (body.lng != null && body.lng !== "") {
-      const n = Number(body.lng);
-      if (Number.isFinite(n) && n >= -180 && n <= 180) lng = n;
-    }
+    // 소유자 관리 토큰 발급 (등록자만 알게 됨 → 수정/삭제 권한)
+    const ownerToken = crypto.randomUUID();
 
     const created = await prisma.service.create({
       data: {
-        ...data,
-        pricing: data.pricing || null,
-        address: data.address || null,
-        submitterName: data.submitterName || null,
-        submitterEmail: data.submitterEmail || null,
-        websiteUrl,
-        instagramUrl,
-        logoUrl,
-        isLocalBiz,
-        lat,
-        lng,
-        mapProvider: isLocalBiz ? str(body.mapProvider, 20) || "naver" : null,
+        ...parsed.data,
         source: "manual",
-        // 데모: 즉시 노출. 운영 시 "pending" 으로 두고 검수 권장.
-        status: "approved",
+        // ADMIN_TOKEN 설정 시 검수 대기(pending), 미설정 시 즉시 노출(approved).
+        status: process.env.ADMIN_TOKEN ? "pending" : "approved",
+        ownerToken,
       },
     });
 
-    return NextResponse.json({ service: created }, { status: 201 });
+    // 생성 응답에는 ownerToken 포함(등록자 본인에게 1회 전달) → 관리 페이지 진입용
+    return NextResponse.json({ service: created, ownerToken }, { status: 201 });
   } catch (e: any) {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error("POST /api/services failed:", e);
+    const code = e?.code ? ` [${e.code}]` : "";
+    return NextResponse.json(
+      { error: `등록 실패: 데이터베이스 오류${code}. DB 마이그레이션(npm run db:push) 및 DATABASE_URL 설정을 확인하세요.` },
+      { status: 500 }
+    );
   }
 }

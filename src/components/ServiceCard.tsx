@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useLang } from "./LangProvider";
-import { CATEGORY_LABELS, STAGE_LABELS, REGION_LABELS } from "@/lib/types";
+import { CATEGORY_LABELS, STAGE_LABELS, REGION_LABELS, PLATFORM_LABELS } from "@/lib/types";
+import { Stars } from "./Stars";
 
 export type ServiceLite = {
   id: string;
@@ -19,6 +20,10 @@ export type ServiceLite = {
   views: number;
   upvotes: number;
   tags: string;
+  kind?: string;
+  platform?: string | null;
+  ratingSum?: number;
+  ratingCount?: number;
 };
 
 export function ServiceCard({ s }: { s: ServiceLite }) {
@@ -43,6 +48,11 @@ export function ServiceCard({ s }: { s: ServiceLite }) {
       <p className="mb-3 line-clamp-2 text-sm text-slate-500">{tagline}</p>
 
       <div className="mt-auto flex flex-wrap items-center gap-1.5 text-[11px]">
+        {s.kind === "extension" && s.platform && (
+          <span className="rounded bg-violet-100 px-1.5 py-0.5 font-medium text-violet-700">
+            {PLATFORM_LABELS[s.platform]?.[lang] ?? s.platform}
+          </span>
+        )}
         <span className="rounded bg-brand-50 px-1.5 py-0.5 font-medium text-brand-700">
           {CATEGORY_LABELS[s.category]?.[lang] ?? s.category}
         </span>
@@ -68,6 +78,12 @@ export function ServiceCard({ s }: { s: ServiceLite }) {
       <div className="mt-3 flex items-center gap-3 text-[11px] text-slate-400">
         <span>▲ {s.upvotes}</span>
         <span>{s.views} {t("views")}</span>
+        {s.ratingCount && s.ratingCount > 0 ? (
+          <span className="flex items-center gap-1">
+            <Stars value={(s.ratingSum ?? 0) / s.ratingCount} className="text-[11px]" />
+            {((s.ratingSum ?? 0) / s.ratingCount).toFixed(1)}
+          </span>
+        ) : null}
       </div>
     </Link>
   );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { LangProvider } from "@/components/LangProvider";
 import { Header } from "@/components/Header";
+import { Mascot } from "@/components/Mascot";
 
 export const metadata: Metadata = {
   title: "AI 서비스 허브 | AI Service Hub",
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <footer className="border-t border-slate-200 py-8 text-center text-sm text-slate-400">
             AI Service Hub · 누구나 등록 가능한 AI 서비스 디렉토리
           </footer>
+          <Mascot />
         </LangProvider>
       </body>
     </html>

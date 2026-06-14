@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLang } from "@/components/LangProvider";
 import { MapView } from "@/components/MapView";
 import { ShareButtons } from "@/components/ShareButtons";
+import { ReviewSection } from "@/components/ReviewSection";
+import { CheckinButtons } from "@/components/CheckinButtons";
+import { Stars } from "@/components/Stars";
+import { ServiceCard, type ServiceLite } from "@/components/ServiceCard";
 import { safeExternalUrl } from "@/lib/url";
-import { CATEGORY_LABELS, STAGE_LABELS, REGION_LABELS } from "@/lib/types";
+import { CATEGORY_LABELS, STAGE_LABELS, REGION_LABELS, PLATFORM_LABELS } from "@/lib/types";
 
 export type ServiceFull = {
   id: string;
@@ -14,15 +18,29 @@ export type ServiceFull = {
   taglineKo: string; taglineEn: string;
   descKo: string; descEn: string;
   category: string; stage: string; region: string;
+  kind?: string; platform?: string | null; repoUrl?: string | null;
   websiteUrl?: string | null; instagramUrl?: string | null;
   pricing?: string | null;
   isLocalBiz: boolean; address?: string | null; lat?: number | null; lng?: number | null;
   views: number; upvotes: number; tags: string;
+  ratingSum: number; ratingCount: number;
 };
 
 export default function ServiceDetailClient({ service: s }: { service: ServiceFull }) {
   const { lang, t } = useLang();
   const [upvotes, setUpvotes] = useState(s.upvotes);
+  const [related, setRelated] = useState<ServiceLite[]>([]);
+
+  useEffect(() => {
+    const p = new URLSearchParams({ category: s.category, sort: "top" });
+    if (s.kind) p.set("kind", s.kind);
+    fetch(`/api/services?${p.toString()}`)
+      .then((r) => r.json())
+      .then((d) => setRelated((d.services ?? []).filter((x: ServiceLite) => x.id !== s.id).slice(0, 3)))
+      .catch(() => {});
+  }, [s.id, s.category, s.kind]);
+
+  const avg = s.ratingCount > 0 ? s.ratingSum / s.ratingCount : 0;
 
   const upvote = async () => {
     try {
@@ -44,6 +62,7 @@ export default function ServiceDetailClient({ service: s }: { service: ServiceFu
   const tags = s.tags.split(",").map((x) => x.trim()).filter(Boolean);
   const website = safeExternalUrl(s.websiteUrl);
   const instagram = safeExternalUrl(s.instagramUrl);
+  const repo = safeExternalUrl(s.repoUrl);
 
   return (
     <div className="flex flex-col gap-6">
@@ -56,6 +75,12 @@ export default function ServiceDetailClient({ service: s }: { service: ServiceFu
           <div>
             <h1 className="text-2xl font-bold">{name}</h1>
             <p className="mt-1 text-lg text-slate-500">{tagline}</p>
+            {s.ratingCount > 0 && (
+              <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
+                <Stars value={avg} />
+                <span>{avg.toFixed(1)} ({s.ratingCount})</span>
+              </div>
+            )}
           </div>
           <button
             onClick={upvote}
@@ -66,6 +91,11 @@ export default function ServiceDetailClient({ service: s }: { service: ServiceFu
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2 text-xs">
+          {s.kind === "extension" && s.platform && (
+            <span className="rounded-full bg-violet-100 px-3 py-1 font-medium text-violet-700">
+              {PLATFORM_LABELS[s.platform]?.[lang] ?? s.platform}
+            </span>
+          )}
           <Badge>{CATEGORY_LABELS[s.category]?.[lang] ?? s.category}</Badge>
           <Badge>{STAGE_LABELS[s.stage]?.[lang] ?? s.stage}</Badge>
           <Badge>{REGION_LABELS[s.region]?.[lang] ?? s.region}</Badge>
@@ -104,6 +134,16 @@ export default function ServiceDetailClient({ service: s }: { service: ServiceFu
               {t("view_instagram")} ↗
             </a>
           )}
+          {repo && (
+            <a
+              href={repo}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              {t("view_repo")} ↗
+            </a>
+          )}
         </div>
 
         <div className="mt-6 border-t border-slate-100 pt-4">
@@ -119,6 +159,21 @@ export default function ServiceDetailClient({ service: s }: { service: ServiceFu
             center={{ lat: s.lat, lng: s.lng }}
             height={360}
           />
+        </div>
+      )}
+
+      <CheckinButtons serviceId={s.id} />
+
+      <ReviewSection serviceId={s.id} initialSum={s.ratingSum} initialCount={s.ratingCount} />
+
+      {related.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-lg font-bold">{t("related_title")}</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {related.map((r) => (
+              <ServiceCard key={r.id} s={r} />
+            ))}
+          </div>
         </div>
       )}
     </div>

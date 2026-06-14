@@ -46,10 +46,12 @@ export default async function ServiceDetailPage({ params }: { params: { id: stri
     taglineKo: s.taglineKo, taglineEn: s.taglineEn,
     descKo: s.descKo, descEn: s.descEn,
     category: s.category, stage: s.stage, region: s.region,
+    kind: s.kind, platform: s.platform, repoUrl: s.repoUrl,
     websiteUrl: s.websiteUrl, instagramUrl: s.instagramUrl,
     pricing: s.pricing,
     isLocalBiz: s.isLocalBiz, address: s.address, lat: s.lat, lng: s.lng,
     views: s.views, upvotes: s.upvotes, tags: s.tags,
+    ratingSum: s.ratingSum, ratingCount: s.ratingCount,
   };
 
   return <ServiceDetailClient service={service} />;

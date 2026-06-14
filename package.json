@@ -2,6 +2,7 @@
   "name": "ai-service-hub",
   "version": "0.1.0",
   "private": true,
+  "license": "Apache-2.0",
   "description": "AI agent/service 디렉토리 & 홍보 플랫폼 (한국/미국/글로벌, MVP·pre-MVP 단계 포함)",
   "scripts": {
     "dev": "next dev",

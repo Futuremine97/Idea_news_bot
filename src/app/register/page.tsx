@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLang } from "@/components/LangProvider";
 import {
-  CATEGORIES, STAGES, REGIONS, PRICING,
-  CATEGORY_LABELS, STAGE_LABELS, REGION_LABELS,
+  CATEGORIES, STAGES, REGIONS, PRICING, KINDS, PLATFORMS,
+  CATEGORY_LABELS, STAGE_LABELS, REGION_LABELS, KIND_LABELS, PLATFORM_LABELS,
 } from "@/lib/types";
 
 type Form = {
+  kind: string; platform: string; repoUrl: string;
   nameKo: string; nameEn: string;
   taglineKo: string; taglineEn: string;
   descKo: string; descEn: string;
@@ -19,6 +20,7 @@ type Form = {
 };
 
 const empty: Form = {
+  kind: "service", platform: "mcp", repoUrl: "",
   nameKo: "", nameEn: "", taglineKo: "", taglineEn: "", descKo: "", descEn: "",
   category: "chatbot", stage: "mvp", region: "kr",
   websiteUrl: "", instagramUrl: "", pricing: "freemium", tags: "",
@@ -34,6 +36,13 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
 
   const set = (patch: Partial<Form>) => setForm((f) => ({ ...f, ...patch }));
+
+  // /tools 에서 "등록" 진입 시 ?kind=extension 자동 선택
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("kind") === "extension") set({ kind: "extension" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [geoStatus, setGeoStatus] = useState<"idle" | "searching" | "fail" | "disabled">("idle");
   const geocode = async () => {
@@ -76,8 +85,16 @@ export default function RegisterPage() {
         throw new Error(d.error || "Error");
       }
       const d = await r.json();
+      const id = d.service.id;
+      const token = d.ownerToken || "";
+      try {
+        localStorage.setItem(`ownerToken:${id}`, token);
+      } catch {
+        /* ignore */
+      }
       setStatus("done");
-      router.push(`/services/${d.service.id}`);
+      // 소유자 관리 페이지로 이동 (관리 링크/통계/수정 제공)
+      router.push(`/manage/${id}?t=${encodeURIComponent(token)}`);
     } catch (err: any) {
       setStatus("error");
       setError(err.message);
@@ -94,6 +111,40 @@ export default function RegisterPage() {
       <p className="mt-1 text-slate-500">{t("register_sub")}</p>
 
       <form onSubmit={submit} className="mt-6 flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-6">
+        {/* 종류: 서비스 vs 확장(플러그인/스킬/MCP) */}
+        <div className="rounded-xl bg-slate-50 p-4">
+          <span className="mb-2 block text-sm font-medium text-slate-700">{t("field_kind")}</span>
+          <div className="flex flex-wrap gap-2">
+            {KINDS.map((k) => (
+              <button
+                type="button"
+                key={k}
+                onClick={() => set({ kind: k })}
+                className={
+                  "rounded-lg px-4 py-2 text-sm font-medium " +
+                  (form.kind === k ? "bg-brand-600 text-white" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100")
+                }
+              >
+                {KIND_LABELS[k][lang]}
+              </button>
+            ))}
+          </div>
+          {form.kind === "extension" && (
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label={t("field_platform")}>
+                <select className={inputCls} value={form.platform} onChange={(e) => set({ platform: e.target.value })}>
+                  {PLATFORMS.map((p) => (
+                    <option key={p} value={p}>{PLATFORM_LABELS[p][lang]}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label={t("field_repo")}>
+                <input className={inputCls} type="url" placeholder="https://github.com/..." value={form.repoUrl} onChange={(e) => set({ repoUrl: e.target.value })} />
+              </Field>
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label={`${t("field_nameKo")} *`}>
             <input className={inputCls} required value={form.nameKo} onChange={(e) => set({ nameKo: e.target.value })} />
