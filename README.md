@@ -64,6 +64,15 @@ npm run dev
 
 서버 환경변수 `ADMIN_TOKEN` 을 설정하면 검수 모드가 켜집니다: 신규 등록이 `pending` 으로 들어가고, `/admin` 에서 토큰 입력 후 승인/거부/추천(featured)/삭제할 수 있습니다. `ADMIN_TOKEN` 미설정 시에는 등록이 즉시 노출되는 데모 모드입니다.
 
+## 자동 수집
+
+- `npm run seed:ext` — 인기 MCP/GPT/Claude 확장 28종을 등록(`scripts/seed-extensions.ts`).
+- `npm run collect:threads` — **Threads 공식 API**(`keyword_search`)로 공개 게시물을 키워드 검색해 후보를 `pending`으로 저장(`scripts/collect-threads.ts`). `THREADS_ACCESS_TOKEN` 필요, 무단 스크래핑 아님.
+
+> ⚠️ Threads/SNS는 **공식 API + 본인 앱 토큰**으로만 수집하세요. 수집물은 항상 `pending`으로 저장되어 `/admin`에서 사람이 검수 후 노출됩니다. 키워드 검색은 7일 500쿼리 제한이 있습니다.
+
+**봇처럼 주기적으로 돌리려면**: Vercel Cron(`vercel.json`의 cron + API 라우트) 또는 로컬 crontab으로 `collect:threads`를 스케줄링하세요.
+
 ## API
 
 | 메서드 | 경로 | 설명 |
