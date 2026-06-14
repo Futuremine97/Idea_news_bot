@@ -163,20 +163,20 @@ export function Mascot() {
             <ellipse cx="32" cy="80" rx="18" ry="4" fill="#0f172a" opacity="0.12" />
             {/* 다리 */}
             <g className="hubi-legL">
-              <rect x="22" y="58" width="7" height="16" rx="3.5" fill="#4338ca" />
-              <rect x="19" y="71" width="13" height="6" rx="3" fill="#312e81" />
+              <rect x="22" y="58" width="7" height="16" rx="3.5" fill="#243b66" />
+              <rect x="19" y="71" width="13" height="6" rx="3" fill="#16223b" />
             </g>
             <g className="hubi-legR">
-              <rect x="35" y="58" width="7" height="16" rx="3.5" fill="#4338ca" />
-              <rect x="32" y="71" width="13" height="6" rx="3" fill="#312e81" />
+              <rect x="35" y="58" width="7" height="16" rx="3.5" fill="#243b66" />
+              <rect x="32" y="71" width="13" height="6" rx="3" fill="#16223b" />
             </g>
             {/* 몸체 */}
             <g className="hubi-body">
               {/* 안테나 */}
-              <line x1="32" y1="6" x2="32" y2="16" stroke="#6366f1" strokeWidth="2.5" />
+              <line x1="32" y1="6" x2="32" y2="16" stroke="#2f4a7a" strokeWidth="2.5" />
               <circle cx="32" cy="5" r="4" fill="#f59e0b" />
               {/* 머리/몸통 */}
-              <rect x="12" y="14" width="40" height="46" rx="16" fill="#6366f1" />
+              <rect x="12" y="14" width="40" height="46" rx="16" fill="#2f4a7a" />
               <rect x="12" y="14" width="40" height="46" rx="16" fill="url(#hubi-g)" opacity="0.25" />
               {/* 얼굴 패널 */}
               <rect x="18" y="24" width="28" height="20" rx="10" fill="#1e1b4b" />
@@ -188,8 +188,8 @@ export function Mascot() {
               {/* 미소 */}
               <path d="M27 39 Q32 43 37 39" stroke="#a5f3fc" strokeWidth="2" fill="none" strokeLinecap="round" />
               {/* 팔 */}
-              <rect x="6" y="32" width="8" height="7" rx="3.5" fill="#4338ca" />
-              <rect x="50" y="32" width="8" height="7" rx="3.5" fill="#4338ca" />
+              <rect x="6" y="32" width="8" height="7" rx="3.5" fill="#243b66" />
+              <rect x="50" y="32" width="8" height="7" rx="3.5" fill="#243b66" />
               {/* 가슴 표시 */}
               <text x="32" y="55" textAnchor="middle" fontSize="8" fontWeight="700" fill="#e0e7ff">AI</text>
             </g>

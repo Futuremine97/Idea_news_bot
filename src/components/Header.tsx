@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLang } from "./LangProvider";
 import { getVisitorId } from "@/lib/visitor";
+import { Logo } from "./Logo";
 
 export function Header() {
   const { lang, setLang, t } = useLang();
@@ -12,9 +13,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/" className="flex items-center gap-2 font-bold text-brand-600">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-600 text-white">AI</span>
-          <span>{t("siteName")}</span>
+        <Link href="/" aria-label={t("siteName")} className="shrink-0">
+          <Logo label={t("siteName")} />
         </Link>
         <nav className="flex items-center gap-1 text-sm sm:gap-3">
           <Link href="/" className="rounded px-2 py-1 text-slate-600 hover:bg-slate-100">
